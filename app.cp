@@ -1,12 +1,12 @@
-# Welcome to CodePi Web App
-make background color #181818
+make background color #121212
 
-create heading "CodePi Live Interactive App" with name "title"
+create heading "Welcome to CodePi Forms" with name "title"
 make "title" color #00d2ff
 
-create button "Click Me to Change Theme" with name "myBtn"
-make "myBtn" color #ff4757
+create input "Type your name here..." with name "userName"
 
-when "myBtn" is clicked:
-    make background color #2ed573
-    say "Awesome! Theme changed successfully."
+create button "Greeting Me" with name "greetBtn"
+make "greetBtn" color #2ed573
+
+when "greetBtn" is clicked:
+    say text from "userName"

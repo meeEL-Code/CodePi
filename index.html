@@ -9,14 +9,26 @@ body {
   font-family: sans-serif;
   padding: 50px;
   text-align: center;
+  background-color: #121212;
+  color: white;
   transition: all 0.4s ease;
-  background-color: #181818;
+  background-color: #121212;
+}
+input {
+  padding: 12px 18px;
+  font-size: 16px;
+  border-radius: 8px;
+  border: 1px solid #444;
+  margin: 10px;
+  background: #222;
+  color: #fff;
+  outline: none;
 }
 #title {
   color: #00d2ff;
 }
-#myBtn {
-  color: #ff4757;
+#greetBtn {
+  color: #2ed573;
 }
 .cp-btn {
   padding: 14px 28px;
@@ -29,16 +41,16 @@ body {
 </style>
 </head>
 <body>
-  <h1 id="title">CodePi Live Interactive App</h1>
-  <button id="myBtn" class="cp-btn">Click Me to Change Theme</button>
+  <h1 id="title">Welcome to CodePi Forms</h1>
+  <div><input type="text" id="userName" placeholder="Type your name here..."></div>
+  <button id="greetBtn" class="cp-btn">Greeting Me</button>
 
 <script>
 document.addEventListener('DOMContentLoaded', () => {
-  const targetBtn = document.getElementById("myBtn");
+  const targetBtn = document.getElementById("greetBtn");
   if(targetBtn) {
     targetBtn.addEventListener("click", () => {
-      document.body.style.backgroundColor = "#2ed573";
-    alert("Awesome! Theme changed successfully.");
+      const val = document.getElementById("userName").value; alert(val ? "Hello, " + val : "Please type something!");
     });
   }
 });

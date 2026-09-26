@@ -13,7 +13,8 @@ def compile_cp(filename):
         lines = f.readlines()
 
     css_rules = {
-        "body": ["font-family: sans-serif", "padding: 50px", "text-align: center", "transition: all 0.4s ease"]
+        "body": ["font-family: sans-serif", "padding: 50px", "text-align: center", "background-color: #121212", "color: white", "transition: all 0.4s ease"],
+        "input": ["padding: 12px 18px", "font-size: 16px", "border-radius: 8px", "border: 1px solid #444", "margin: 10px", "background: #222", "color: #fff", "outline: none"]
     }
     html_elements = []
     js_events = []
@@ -40,6 +41,11 @@ def compile_cp(filename):
                 if "make background color" in line_str:
                     color = line_str.replace("make background color", "").strip()
                     js_events.append(f'document.body.style.backgroundColor = "{color}";')
+                elif "say text from" in line_str:
+                    match_inp = re.search(r'"([^"]*)"', line_str)
+                    if match_inp:
+                        inp_id = match_inp.group(1)
+                        js_events.append(f'const val = document.getElementById("{inp_id}").value; alert(val ? "Hello, " + val : "Please type something!");')
                 elif "say " in line_str:
                     msg = line_str.replace("say ", "").strip().strip('"')
                     js_events.append(f'alert("{msg}");')
@@ -57,6 +63,13 @@ def compile_cp(filename):
             text = match_text.group(1) if match_text else "Heading"
             elem_id = match_id.group(1) if match_id else "heading1"
             html_elements.append(f'  <h1 id="{elem_id}">{text}</h1>')
+
+        elif line_str.startswith("create input"):
+            match_text = re.search(r'"([^"]*)"', line_str)
+            match_id = re.search(r'with name "([^"]*)"', line_str)
+            placeholder = match_text.group(1) if match_text else "Enter text..."
+            elem_id = match_id.group(1) if match_id else "input1"
+            html_elements.append(f'  <div><input type="text" id="{elem_id}" placeholder="{placeholder}"></div>')
 
         elif line_str.startswith("create button"):
             match_text = re.search(r'"([^"]*)"', line_str)
@@ -144,5 +157,4 @@ CodePi CLI Tool Usage:
             port = int(args[2]) if len(args) > 2 else 8080
             start_server(port)
     else:
-        # Default behavior: build
         compile_cp(args[0])
