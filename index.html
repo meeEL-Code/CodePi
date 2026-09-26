@@ -3,28 +3,45 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>CodePi Web Output</title>
+    <title>CodePi App</title>
     <style>
 body {
-  font-family: Arial, sans-serif;
-  padding: 20px;
+  font-family: sans-serif;
+  padding: 50px;
   text-align: center;
-  background-color: #121212;
+  transition: all 0.4s ease;
+  background-color: #181818;
 }
-.cp-heading {
-  color: #ffffff;
+#title {
+  color: #00d2ff;
+}
+#myBtn {
+  color: #ff4757;
 }
 .cp-btn {
-  padding: 12px 24px;
+  padding: 14px 28px;
+  font-size: 16px;
   border: none;
   border-radius: 8px;
   cursor: pointer;
-  background-color: #007bff;
+  font-weight: bold;
 }
 </style>
 </head>
 <body>
-  <h1 class='cp-heading'>Welcome to CodePi</h1>
-  <button class='cp-btn'>Get Started</button>
+  <h1 id="title">CodePi Live Interactive App</h1>
+  <button id="myBtn" class="cp-btn">Click Me to Change Theme</button>
+
+<script>
+document.addEventListener('DOMContentLoaded', () => {
+  const targetBtn = document.getElementById("myBtn");
+  if(targetBtn) {
+    targetBtn.addEventListener("click", () => {
+      document.body.style.backgroundColor = "#2ed573";
+    alert("Awesome! Theme changed successfully.");
+    });
+  }
+});
+</script>
 </body>
 </html>
