@@ -14,7 +14,7 @@ def compile_cp(filename):
 
     css_rules = {
         "body": ["font-family: sans-serif", "padding: 50px", "text-align: center", "background-color: #121212", "color: white", "transition: all 0.4s ease"],
-        "input": ["padding: 12px 18px", "font-size: 16px", "border-radius: 8px", "border: 1px solid #444", "margin: 10px", "background: #222", "color: #fff", "outline: none"]
+        "input": ["padding: 12px 18px", "font-size: 16px", "border-radius: 8px", "border: 1px solid #444", "margin: 10px", "background: #222", "color: #fff", "outline: none", "width: 80%"]
     }
     html_elements = []
     js_events = []
@@ -57,12 +57,29 @@ def compile_cp(filename):
             color = line_str.replace("make background color", "").strip()
             css_rules["body"].append(f"background-color: {color}")
 
+        # New: Card Support
+        elif line_str.startswith("start card"):
+            match_id = re.search(r'"([^"]*)"', line_str)
+            elem_id = match_id.group(1) if match_id else "card1"
+            html_elements.append(f'  <div id="{elem_id}" class="cp-card">')
+
+        elif line_str == "end card":
+            html_elements.append('  </div>')
+
         elif line_str.startswith("create heading"):
             match_text = re.search(r'"([^"]*)"', line_str)
             match_id = re.search(r'with name "([^"]*)"', line_str)
             text = match_text.group(1) if match_text else "Heading"
             elem_id = match_id.group(1) if match_id else "heading1"
-            html_elements.append(f'  <h1 id="{elem_id}">{text}</h1>')
+            html_elements.append(f'  <h2 id="{elem_id}">{text}</h2>')
+
+        # New: Text Paragraph Support
+        elif line_str.startswith("create text"):
+            match_text = re.search(r'"([^"]*)"', line_str)
+            match_id = re.search(r'with name "([^"]*)"', line_str)
+            text = match_text.group(1) if match_text else "Text paragraph"
+            elem_id = match_id.group(1) if match_id else "text1"
+            html_elements.append(f'  <p id="{elem_id}" style="color: #ccc; line-height: 1.6;">{text}</p>')
 
         elif line_str.startswith("create input"):
             match_text = re.search(r'"([^"]*)"', line_str)
@@ -76,9 +93,8 @@ def compile_cp(filename):
             match_id = re.search(r'with name "([^"]*)"', line_str)
             text = match_text.group(1) if match_text else "Button"
             elem_id = match_id.group(1) if match_id else "btn1"
-            html_elements.append(f'  <button id="{elem_id}" class="cp-btn">{text}</button>')
+            html_elements.append(f'  <div><button id="{elem_id}" class="cp-btn">{text}</button></div>')
 
-        # New: Image Support
         elif line_str.startswith("create image from"):
             match_src = re.search(r'from "([^"]*)"', line_str)
             match_id = re.search(r'with name "([^"]*)"', line_str)
@@ -86,7 +102,6 @@ def compile_cp(filename):
             elem_id = match_id.group(1) if match_id else "img1"
             html_elements.append(f'  <div><img id="{elem_id}" src="{src}" class="cp-img" alt="CodePi Image"></div>')
 
-        # New: Link Support
         elif line_str.startswith("create link"):
             match_text = re.search(r'create link "([^"]*)"', line_str)
             match_url = re.search(r'to "([^"]*)"', line_str)
@@ -100,20 +115,27 @@ def compile_cp(filename):
             match_id = re.search(r'"([^"]*)"', line_str)
             if match_id:
                 elem_id = match_id.group(1)
-                if "color" in line_str:
+                selector = f"#{elem_id}"
+                if selector not in css_rules:
+                    css_rules[selector] = []
+                
+                # Support Background & Color Changes dynamically
+                if " background " in line_str:
+                    bg_color = line_str.split("background")[-1].strip()
+                    css_rules[selector].append(f"background-color: {bg_color}")
+                elif " color " in line_str:
                     color = line_str.split("color")[-1].strip()
-                    selector = f"#{elem_id}"
-                    if selector not in css_rules:
-                        css_rules[selector] = []
                     css_rules[selector].append(f"color: {color}")
 
-    # Default Styles for new elements
+    # Advanced Styles for new elements
+    if ".cp-card" not in css_rules:
+        css_rules[".cp-card"] = ["background-color: #1e1e2e", "padding: 30px", "border-radius: 16px", "box-shadow: 0 10px 30px rgba(0,0,0,0.5)", "max-width: 400px", "margin: 20px auto", "text-align: center", "border: 1px solid #333"]
     if ".cp-btn" not in css_rules:
-        css_rules[".cp-btn"] = ["padding: 14px 28px", "font-size: 16px", "border: none", "border-radius: 8px", "cursor: pointer", "font-weight: bold", "margin-top: 10px"]
+        css_rules[".cp-btn"] = ["padding: 12px 24px", "font-size: 16px", "border: none", "border-radius: 8px", "cursor: pointer", "font-weight: bold", "margin-top: 15px", "width: 100%"]
     if ".cp-img" not in css_rules:
-        css_rules[".cp-img"] = ["max-width: 80%", "border-radius: 12px", "margin: 20px 0", "box-shadow: 0 4px 12px rgba(0,0,0,0.5)"]
+        css_rules[".cp-img"] = ["width: 100%", "border-radius: 12px", "margin-bottom: 15px"]
     if ".cp-link" not in css_rules:
-        css_rules[".cp-link"] = ["color: #00d2ff", "text-decoration: none", "font-weight: bold", "font-size: 18px", "display: inline-block", "margin: 15px 0"]
+        css_rules[".cp-link"] = ["color: #00d2ff", "text-decoration: none", "font-weight: bold", "display: inline-block", "margin: 10px 0"]
 
     css_out = "<style>\n"
     for sel, rules in css_rules.items():

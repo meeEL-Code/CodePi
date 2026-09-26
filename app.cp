@@ -1,16 +1,19 @@
-make background color #1e1e2e
+make background color #0f0f13
 
-create heading "CodePi Multimedia" with name "title"
-make "title" color #f9e2af
+start card "profileCard"
+    create image from "https://picsum.photos/400/200?random=1" with name "coverImg"
+    
+    create heading "Abdullah Al Mustafa" with name "nameTitle"
+    make "nameTitle" color #ffffff
+    
+    create text "Creator of CodePi Language. Building awesome things with code." with name "bioText"
+    
+    create input "Leave a message..." with name "msgInput"
+    
+    create button "Send Message" with name "sendBtn"
+    make "sendBtn" background #2563eb
+    make "sendBtn" color #ffffff
+end card
 
-create image from "https://picsum.photos/400/200" with name "heroImg"
-
-create link "Visit GitHub Profile" to "https://github.com/meeEL-Code" with name "myLink"
-make "myLink" color #89b4fa
-
-create input "Type something..." with name "userInput"
-create button "Test Action" with name "myBtn"
-make "myBtn" color #a6e3a1
-
-when "myBtn" is clicked:
-    say text from "userInput"
+when "sendBtn" is clicked:
+    say text from "msgInput"
