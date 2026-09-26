@@ -1,7 +1,14 @@
 import sys
 import re
+import os
+import http.server
+import socketserver
 
 def compile_cp(filename):
+    if not os.path.exists(filename):
+        print(f"[ERROR] File '{filename}' not found!")
+        return False
+
     with open(filename, 'r') as f:
         lines = f.readlines()
 
@@ -21,7 +28,6 @@ def compile_cp(filename):
         if not line_str or line_str.startswith('#'):
             continue
 
-        # Handle 'when' block and indentation
         if line_str.startswith('when ') and line_str.endswith(':'):
             in_when_block = True
             match = re.search(r'"([^"]*)"', line_str)
@@ -41,12 +47,10 @@ def compile_cp(filename):
             else:
                 in_when_block = False
 
-        # Background
         if line_str.startswith("make background color"):
             color = line_str.replace("make background color", "").strip()
             css_rules["body"].append(f"background-color: {color}")
 
-        # Heading
         elif line_str.startswith("create heading"):
             match_text = re.search(r'"([^"]*)"', line_str)
             match_id = re.search(r'with name "([^"]*)"', line_str)
@@ -54,7 +58,6 @@ def compile_cp(filename):
             elem_id = match_id.group(1) if match_id else "heading1"
             html_elements.append(f'  <h1 id="{elem_id}">{text}</h1>')
 
-        # Button
         elif line_str.startswith("create button"):
             match_text = re.search(r'"([^"]*)"', line_str)
             match_id = re.search(r'with name "([^"]*)"', line_str)
@@ -62,7 +65,6 @@ def compile_cp(filename):
             elem_id = match_id.group(1) if match_id else "btn1"
             html_elements.append(f'  <button id="{elem_id}" class="cp-btn">{text}</button>')
 
-        # Styling
         elif line_str.startswith("make "):
             match_id = re.search(r'"([^"]*)"', line_str)
             if match_id:
@@ -74,17 +76,14 @@ def compile_cp(filename):
                         css_rules[selector] = []
                     css_rules[selector].append(f"color: {color}")
 
-    # General Button CSS Styling
     if ".cp-btn" not in css_rules:
         css_rules[".cp-btn"] = ["padding: 14px 28px", "font-size: 16px", "border: none", "border-radius: 8px", "cursor: pointer", "font-weight: bold"]
 
-    # Generate CSS string
     css_out = "<style>\n"
     for sel, rules in css_rules.items():
         css_out += f"{sel} {{\n  " + ";\n  ".join(rules) + ";\n}\n"
     css_out += "</style>"
 
-    # Generate JS string
     js_code_block = "\n    ".join(js_events)
     js_out = f"""<script>
 document.addEventListener('DOMContentLoaded', () => {{
@@ -114,8 +113,36 @@ document.addEventListener('DOMContentLoaded', () => {{
 
     with open("index.html", "w") as f:
         f.write(full_html)
-    print(f"[SUCCESS] Compiled '{filename}' successfully to 'index.html'!")
+    print(f"[SUCCESS] Compiled '{filename}' -> 'index.html'")
+    return True
+
+def start_server(port=8080):
+    Handler = http.server.SimpleHTTPRequestHandler
+    with socketserver.TCPServer(("", port), Handler) as httpd:
+        print(f"\n[SERVE] CodePi Live Server running at: http://localhost:{port}")
+        print("Press Ctrl+C to stop the server.\n")
+        try:
+            httpd.serve_forever()
+        except KeyboardInterrupt:
+            print("\n[SERVE] Server stopped.")
 
 if __name__ == "__main__":
-    target_file = sys.argv[1] if len(sys.argv) > 1 else "app.cp"
-    compile_cp(target_file)
+    args = sys.argv[1:]
+    
+    if not args or args[0] in ["--help", "-h"]:
+        print("""
+CodePi CLI Tool Usage:
+  python main.py build <file.cp>     : Compile .cp file to index.html
+  python main.py serve <file.cp>     : Compile and host local web server
+""")
+    elif args[0] == "build":
+        target = args[1] if len(args) > 1 else "app.cp"
+        compile_cp(target)
+    elif args[0] == "serve":
+        target = args[1] if len(args) > 1 else "app.cp"
+        if compile_cp(target):
+            port = int(args[2]) if len(args) > 2 else 8080
+            start_server(port)
+    else:
+        # Default behavior: build
+        compile_cp(args[0])
