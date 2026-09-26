@@ -4,16 +4,9 @@ import os
 import http.server
 import socketserver
 
-def compile_cp(filename):
-    if not os.path.exists(filename):
-        print(f"[ERROR] File '{filename}' not found!")
-        return False
-
-    with open(filename, 'r') as f:
-        lines = f.readlines()
-
+def compile_lines(lines):
     css_rules = {
-        "body": ["font-family: sans-serif", "padding: 50px", "text-align: center", "background-color: #121212", "color: white", "transition: all 0.4s ease"],
+        "body": ["font-family: sans-serif", "padding: 20px", "text-align: center", "background-color: #121212", "color: white", "transition: all 0.4s ease"],
         "input": ["padding: 12px 18px", "font-size: 16px", "border-radius: 8px", "border: 1px solid #444", "margin: 10px", "background: #222", "color: #fff", "outline: none", "width: 80%"]
     }
     html_elements = []
@@ -107,7 +100,6 @@ def compile_cp(filename):
                 selector = f"#{elem_id}"
                 if selector not in css_rules:
                     css_rules[selector] = []
-                
                 if " background " in line_str:
                     bg_color = line_str.split("background")[-1].strip()
                     css_rules[selector].append(f"background-color: {bg_color}")
@@ -115,7 +107,6 @@ def compile_cp(filename):
                     color = line_str.split("color")[-1].strip()
                     css_rules[selector].append(f"color: {color}")
 
-        # NEW: Animation Feature 
         elif line_str.startswith("animate "):
             match_id = re.search(r'animate "([^"]*)"', line_str)
             match_effect = re.search(r'with "([^"]*)"', line_str)
@@ -125,7 +116,6 @@ def compile_cp(filename):
                 selector = f"#{elem_id}"
                 if selector not in css_rules:
                     css_rules[selector] = []
-                
                 if effect == "fade-in":
                     css_rules[selector].extend(["opacity: 0", "animation: fadeIn 1.5s ease-in-out forwards"])
                 elif effect == "slide-up":
@@ -133,7 +123,6 @@ def compile_cp(filename):
                 elif effect == "bounce":
                     css_rules[selector].append("animation: bounce 2s infinite")
 
-    # Advanced Styles
     if ".cp-card" not in css_rules:
         css_rules[".cp-card"] = ["background-color: #1e1e2e", "padding: 30px", "border-radius: 16px", "box-shadow: 0 10px 30px rgba(0,0,0,0.5)", "max-width: 400px", "margin: 20px auto", "text-align: center", "border: 1px solid #333"]
     if ".cp-btn" not in css_rules:
@@ -145,14 +134,12 @@ def compile_cp(filename):
     for sel, rules in css_rules.items():
         css_out += f"{sel} {{\n  " + ";\n  ".join(rules) + ";\n}\n"
     
-    # Inject Keyframes for animations
     css_out += """
     @keyframes fadeIn { from { opacity: 0; } to { opacity: 1; } }
     @keyframes slideUp { from { opacity: 0; transform: translateY(30px); } to { opacity: 1; transform: translateY(0); } }
     @keyframes bounce { 0%, 20%, 50%, 80%, 100% { transform: translateY(0); } 40% { transform: translateY(-15px); } 60% { transform: translateY(-7px); } }
     .cp-btn:hover { filter: brightness(1.2); transform: scale(1.02); }
-    """
-    css_out += "</style>"
+    </style>"""
 
     js_code_block = "\n    ".join(js_events)
     js_out = f"""<script>
@@ -176,30 +163,69 @@ document.addEventListener('DOMContentLoaded', () => {{
 </head>
 <body>
 {chr(10).join(html_elements)}
-
 {js_out}
 </body>
 </html>"""
+    return full_html
 
+def compile_cp(filename):
+    if not os.path.exists(filename):
+        print(f"[ERROR] File '{filename}' not found!")
+        return False
+    with open(filename, 'r') as f:
+        lines = f.readlines()
+    html = compile_lines(lines)
     with open("index.html", "w") as f:
-        f.write(full_html)
+        f.write(html)
     print(f"[SUCCESS] Compiled '{filename}' -> 'index.html'")
     return True
 
+class CodePiWebHandler(http.server.SimpleHTTPRequestHandler):
+    def do_GET(self):
+        if self.path == '/' or self.path == '/ide':
+            self.send_response(200)
+            self.send_header("Content-type", "text/html")
+            self.end_headers()
+            with open("website.html", "rb") as f:
+                self.wfile.write(f.read())
+        else:
+            super().do_GET()
+
+    def do_POST(self):
+        if self.path == '/compile':
+            content_length = int(self.headers['Content-Length'])
+            post_data = self.rfile.read(content_length).decode('utf-8')
+            lines = post_data.split('\n')
+            html_output = compile_lines(lines)
+            self.send_response(200)
+            self.send_header("Content-type", "text/html")
+            self.end_headers()
+            self.wfile.write(html_output.encode('utf-8'))
+
 def start_server(port=8080):
-    Handler = http.server.SimpleHTTPRequestHandler
-    with socketserver.TCPServer(("", port), Handler) as httpd:
-        print(f"\n[SERVE] CodePi Live Server running at: http://localhost:{port}")
-        print("Press Ctrl+C to stop the server.\n")
+    with socketserver.TCPServer(("", port), http.server.SimpleHTTPRequestHandler) as httpd:
+        print(f"\n[SERVE] Serving local app at: http://localhost:{port}")
         try:
             httpd.serve_forever()
         except KeyboardInterrupt:
-            print("\n[SERVE] Server stopped.")
+            pass
+
+def start_web_ide(port=8080):
+    with socketserver.TCPServer(("", port), CodePiWebHandler) as httpd:
+        print(f"\n[IDE] CodePi Official Web IDE running at: http://localhost:{port}")
+        print("Press Ctrl+C to stop.\n")
+        try:
+            httpd.serve_forever()
+        except KeyboardInterrupt:
+            pass
 
 if __name__ == "__main__":
     args = sys.argv[1:]
     if not args or args[0] in ["--help", "-h"]:
-        print("Usage: ./codepi build <file.cp> | ./codepi serve <file.cp>")
+        print("Usage:")
+        print("  ./codepi build <file.cp>  - Compile code to index.html")
+        print("  ./codepi serve <file.cp>  - Compile and serve index.html locally")
+        print("  ./codepi web              - Launch CodePi Official Web IDE")
     elif args[0] == "build":
         target = args[1] if len(args) > 1 else "app.cp"
         compile_cp(target)
@@ -208,5 +234,11 @@ if __name__ == "__main__":
         if compile_cp(target):
             port = int(args[2]) if len(args) > 2 else 8080
             start_server(port)
+    elif args[0] == "web":
+        port = int(args[1]) if len(args) > 1 else 8080
+        if not os.path.exists("website.html"):
+            print("[ERROR] website.html not found! Please create it first.")
+        else:
+            start_web_ide(port)
     else:
         compile_cp(args[0])
