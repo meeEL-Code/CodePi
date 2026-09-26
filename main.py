@@ -78,6 +78,24 @@ def compile_cp(filename):
             elem_id = match_id.group(1) if match_id else "btn1"
             html_elements.append(f'  <button id="{elem_id}" class="cp-btn">{text}</button>')
 
+        # New: Image Support
+        elif line_str.startswith("create image from"):
+            match_src = re.search(r'from "([^"]*)"', line_str)
+            match_id = re.search(r'with name "([^"]*)"', line_str)
+            src = match_src.group(1) if match_src else ""
+            elem_id = match_id.group(1) if match_id else "img1"
+            html_elements.append(f'  <div><img id="{elem_id}" src="{src}" class="cp-img" alt="CodePi Image"></div>')
+
+        # New: Link Support
+        elif line_str.startswith("create link"):
+            match_text = re.search(r'create link "([^"]*)"', line_str)
+            match_url = re.search(r'to "([^"]*)"', line_str)
+            match_id = re.search(r'with name "([^"]*)"', line_str)
+            text = match_text.group(1) if match_text else "Click Here"
+            url = match_url.group(1) if match_url else "#"
+            elem_id = match_id.group(1) if match_id else "link1"
+            html_elements.append(f'  <div><a id="{elem_id}" href="{url}" class="cp-link" target="_blank">{text}</a></div>')
+
         elif line_str.startswith("make "):
             match_id = re.search(r'"([^"]*)"', line_str)
             if match_id:
@@ -89,8 +107,13 @@ def compile_cp(filename):
                         css_rules[selector] = []
                     css_rules[selector].append(f"color: {color}")
 
+    # Default Styles for new elements
     if ".cp-btn" not in css_rules:
-        css_rules[".cp-btn"] = ["padding: 14px 28px", "font-size: 16px", "border: none", "border-radius: 8px", "cursor: pointer", "font-weight: bold"]
+        css_rules[".cp-btn"] = ["padding: 14px 28px", "font-size: 16px", "border: none", "border-radius: 8px", "cursor: pointer", "font-weight: bold", "margin-top: 10px"]
+    if ".cp-img" not in css_rules:
+        css_rules[".cp-img"] = ["max-width: 80%", "border-radius: 12px", "margin: 20px 0", "box-shadow: 0 4px 12px rgba(0,0,0,0.5)"]
+    if ".cp-link" not in css_rules:
+        css_rules[".cp-link"] = ["color: #00d2ff", "text-decoration: none", "font-weight: bold", "font-size: 18px", "display: inline-block", "margin: 15px 0"]
 
     css_out = "<style>\n"
     for sel, rules in css_rules.items():
@@ -141,13 +164,8 @@ def start_server(port=8080):
 
 if __name__ == "__main__":
     args = sys.argv[1:]
-    
     if not args or args[0] in ["--help", "-h"]:
-        print("""
-CodePi CLI Tool Usage:
-  python main.py build <file.cp>     : Compile .cp file to index.html
-  python main.py serve <file.cp>     : Compile and host local web server
-""")
+        print("Usage: ./codepi build <file.cp> | ./codepi serve <file.cp>")
     elif args[0] == "build":
         target = args[1] if len(args) > 1 else "app.cp"
         compile_cp(target)

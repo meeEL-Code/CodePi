@@ -1,12 +1,16 @@
-make background color #121212
+make background color #1e1e2e
 
-create heading "Welcome to CodePi Forms" with name "title"
-make "title" color #00d2ff
+create heading "CodePi Multimedia" with name "title"
+make "title" color #f9e2af
 
-create input "Type your name here..." with name "userName"
+create image from "https://picsum.photos/400/200" with name "heroImg"
 
-create button "Greeting Me" with name "greetBtn"
-make "greetBtn" color #2ed573
+create link "Visit GitHub Profile" to "https://github.com/meeEL-Code" with name "myLink"
+make "myLink" color #89b4fa
 
-when "greetBtn" is clicked:
-    say text from "userName"
+create input "Type something..." with name "userInput"
+create button "Test Action" with name "myBtn"
+make "myBtn" color #a6e3a1
+
+when "myBtn" is clicked:
+    say text from "userInput"
