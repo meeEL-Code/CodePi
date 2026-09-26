@@ -57,7 +57,6 @@ def compile_cp(filename):
             color = line_str.replace("make background color", "").strip()
             css_rules["body"].append(f"background-color: {color}")
 
-        # New: Card Support
         elif line_str.startswith("start card"):
             match_id = re.search(r'"([^"]*)"', line_str)
             elem_id = match_id.group(1) if match_id else "card1"
@@ -73,7 +72,6 @@ def compile_cp(filename):
             elem_id = match_id.group(1) if match_id else "heading1"
             html_elements.append(f'  <h2 id="{elem_id}">{text}</h2>')
 
-        # New: Text Paragraph Support
         elif line_str.startswith("create text"):
             match_text = re.search(r'"([^"]*)"', line_str)
             match_id = re.search(r'with name "([^"]*)"', line_str)
@@ -102,15 +100,6 @@ def compile_cp(filename):
             elem_id = match_id.group(1) if match_id else "img1"
             html_elements.append(f'  <div><img id="{elem_id}" src="{src}" class="cp-img" alt="CodePi Image"></div>')
 
-        elif line_str.startswith("create link"):
-            match_text = re.search(r'create link "([^"]*)"', line_str)
-            match_url = re.search(r'to "([^"]*)"', line_str)
-            match_id = re.search(r'with name "([^"]*)"', line_str)
-            text = match_text.group(1) if match_text else "Click Here"
-            url = match_url.group(1) if match_url else "#"
-            elem_id = match_id.group(1) if match_id else "link1"
-            html_elements.append(f'  <div><a id="{elem_id}" href="{url}" class="cp-link" target="_blank">{text}</a></div>')
-
         elif line_str.startswith("make "):
             match_id = re.search(r'"([^"]*)"', line_str)
             if match_id:
@@ -119,7 +108,6 @@ def compile_cp(filename):
                 if selector not in css_rules:
                     css_rules[selector] = []
                 
-                # Support Background & Color Changes dynamically
                 if " background " in line_str:
                     bg_color = line_str.split("background")[-1].strip()
                     css_rules[selector].append(f"background-color: {bg_color}")
@@ -127,19 +115,43 @@ def compile_cp(filename):
                     color = line_str.split("color")[-1].strip()
                     css_rules[selector].append(f"color: {color}")
 
-    # Advanced Styles for new elements
+        # NEW: Animation Feature 
+        elif line_str.startswith("animate "):
+            match_id = re.search(r'animate "([^"]*)"', line_str)
+            match_effect = re.search(r'with "([^"]*)"', line_str)
+            if match_id and match_effect:
+                elem_id = match_id.group(1)
+                effect = match_effect.group(1)
+                selector = f"#{elem_id}"
+                if selector not in css_rules:
+                    css_rules[selector] = []
+                
+                if effect == "fade-in":
+                    css_rules[selector].extend(["opacity: 0", "animation: fadeIn 1.5s ease-in-out forwards"])
+                elif effect == "slide-up":
+                    css_rules[selector].extend(["opacity: 0", "transform: translateY(30px)", "animation: slideUp 1s ease-out forwards"])
+                elif effect == "bounce":
+                    css_rules[selector].append("animation: bounce 2s infinite")
+
+    # Advanced Styles
     if ".cp-card" not in css_rules:
         css_rules[".cp-card"] = ["background-color: #1e1e2e", "padding: 30px", "border-radius: 16px", "box-shadow: 0 10px 30px rgba(0,0,0,0.5)", "max-width: 400px", "margin: 20px auto", "text-align: center", "border: 1px solid #333"]
     if ".cp-btn" not in css_rules:
-        css_rules[".cp-btn"] = ["padding: 12px 24px", "font-size: 16px", "border: none", "border-radius: 8px", "cursor: pointer", "font-weight: bold", "margin-top: 15px", "width: 100%"]
+        css_rules[".cp-btn"] = ["padding: 12px 24px", "font-size: 16px", "border: none", "border-radius: 8px", "cursor: pointer", "font-weight: bold", "margin-top: 15px", "width: 100%", "transition: 0.3s"]
     if ".cp-img" not in css_rules:
         css_rules[".cp-img"] = ["width: 100%", "border-radius: 12px", "margin-bottom: 15px"]
-    if ".cp-link" not in css_rules:
-        css_rules[".cp-link"] = ["color: #00d2ff", "text-decoration: none", "font-weight: bold", "display: inline-block", "margin: 10px 0"]
 
     css_out = "<style>\n"
     for sel, rules in css_rules.items():
         css_out += f"{sel} {{\n  " + ";\n  ".join(rules) + ";\n}\n"
+    
+    # Inject Keyframes for animations
+    css_out += """
+    @keyframes fadeIn { from { opacity: 0; } to { opacity: 1; } }
+    @keyframes slideUp { from { opacity: 0; transform: translateY(30px); } to { opacity: 1; transform: translateY(0); } }
+    @keyframes bounce { 0%, 20%, 50%, 80%, 100% { transform: translateY(0); } 40% { transform: translateY(-15px); } 60% { transform: translateY(-7px); } }
+    .cp-btn:hover { filter: brightness(1.2); transform: scale(1.02); }
+    """
     css_out += "</style>"
 
     js_code_block = "\n    ".join(js_events)

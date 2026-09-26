@@ -1,7 +1,7 @@
 make background color #0f0f13
 
 start card "profileCard"
-    create image from "https://picsum.photos/400/200?random=1" with name "coverImg"
+    create image from "https://picsum.photos/400/200?random=2" with name "coverImg"
     create heading "Abdullah Al Mustafa" with name "nameTitle"
     make "nameTitle" color #ffffff
     create text "Creator of CodePi Language. Building awesome things with code." with name "bioText"
@@ -10,6 +10,9 @@ start card "profileCard"
     make "sendBtn" background #2563eb
     make "sendBtn" color #ffffff
 end card
+
+animate "profileCard" with "slide-up"
+animate "coverImg" with "fade-in"
 
 when "sendBtn" is clicked:
     say text from "msgInput"
